@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PC Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --plate: #dde2e6;
+    --panel: #f4f6f7;
+    --ink: #17202b;
+    --muted: #4a5561;
+    --line: #c3cad1;
+    --ok: #1f7a63;
+    --warn: #b97c06;
+    --bad: #b3261e;
+    --focus: #2457c5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--plate); color: var(--ink);
+    font: 400 15px/1.5 Archivo, system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  button {
+    font: inherit; color: inherit; cursor: pointer;
+    background: var(--panel); border: 1.5px solid var(--ink); border-radius: 4px;
+    padding: .45em .9em; font-weight: 600;
+  }
+  button:hover { background: #fff; }
+  button.primary { background: var(--ink); color: var(--panel); }
+  button.primary:hover { background: #2c3949; }
+  button:disabled { opacity: .45; cursor: progress; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 24px; margin-bottom: 28px; }
+  h1 {
+    margin: 0; font-size: 44px; line-height: 1; font-weight: 800;
+    font-stretch: 125%; letter-spacing: -.02em;
+  }
+  .machine { color: var(--muted); flex: 1; min-width: 220px; }
+  .head-actions { display: flex; gap: 8px; }
+
+  h2 { margin: 0 0 12px; font-size: 21px; font-weight: 750; font-stretch: 112%; }
+  .sub { color: var(--muted); font-size: 14px; margin: -8px 0 14px; }
+
+  section { background: var(--panel); border: 1.5px solid var(--line); border-radius: 6px; padding: 20px; }
+
+  /* Attention list: the first thing to read */
+  #attention { border-color: var(--ink); margin-bottom: 20px; }
+  .issue { display: grid; grid-template-columns: 6px 1fr; gap: 14px; padding: 10px 0; }
+  .issue + .issue { border-top: 1px solid var(--line); }
+  .issue::before { content: ""; border-radius: 3px; background: var(--warn); }
+  .issue.bad::before { background: var(--bad); }
+  .issue.ok::before { background: var(--ok); }
+  .issue p { margin: 0; font-size: 18px; font-weight: 600; }
+  .issue small { color: var(--muted); font-size: 14px; }
+
+  /* Gauges: horizontal meter strips with tick marks */
+  .gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px 28px; margin-bottom: 20px; }
+  .gauge .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .gauge .val { font-size: 34px; font-weight: 750; font-stretch: 75%; line-height: 1.1; }
+  .gauge .name { font-weight: 600; }
+  .gauge .detail { color: var(--muted); font-size: 13px; }
+  .meter { position: relative; height: 18px; margin: 6px 0 4px; background: #fff; border: 1.5px solid var(--ink); border-radius: 3px; overflow: hidden; }
+  .meter i { position: absolute; inset: 0 auto 0 0; background: var(--ink); transition: width .5s ease; }
+  .meter.warn i { background: var(--warn); }
+  .meter.bad i { background: var(--bad); }
+  .meter::after {
+    content: ""; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1.5px), var(--plate) calc(10% - 1.5px) 10%);
+    mix-blend-mode: normal; opacity: .9;
+  }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } h1 { font-size: 34px; } }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-weight: 600; color: var(--muted); font-size: 13px; padding: 0 0 6px; }
+  td { padding: 6px 0; border-top: 1px solid var(--line); }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  .count { color: var(--muted); font-size: 13px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tabs button { padding: .2em .7em; font-size: 14px; border-width: 1px; }
+  .tabs button[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+
+  .clean-row { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; align-items: start; padding: 10px 0; border-top: 1px solid var(--line); }
+  .clean-row:first-of-type { border-top: 0; }
+  .clean-row input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--ink); }
+  .clean-row label { font-weight: 600; }
+  .clean-row small { grid-column: 2; color: var(--muted); }
+  .clean-row .size { font-weight: 700; }
+  .clean-foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+  .result { color: var(--ok); font-weight: 600; }
+
+  .startup-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
+  .startup-row .cmd { grid-column: 1; color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .startup-row .who { color: var(--muted); font-size: 13px; font-weight: 400; }
+  .startup-row.off .nm { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .switch { grid-row: 1 / span 2; grid-column: 2; min-width: 92px; }
+  .switch[aria-checked="true"] { background: var(--ink); color: var(--panel); }
+
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .loading { color: var(--muted); }
+  .error { color: var(--bad); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>PC Hub</h1>
+    <div class="machine" id="machine">Reading your PC…</div>
+    <div class="head-actions">
+      <button id="refresh" class="primary">Check again</button>
+      <button id="quit" title="Stop the PC Hub background server">Close PC Hub</button>
+    </div>
+  </header>
+
+  <section id="attention" aria-live="polite">
+    <h2>What needs attention</h2>
+    <div id="issues" class="loading">Checking memory, drives, disk health and antivirus…</div>
+  </section>
+
+  <div class="gauges" id="gauges"></div>
+
+  <div class="grid">
+    <section>
+      <h2>What is using your PC</h2>
+      <div class="tabs" role="group" aria-label="Sort apps by">
+        <button data-sort="topMem" aria-pressed="true">Memory</button>
+        <button data-sort="topCpu" aria-pressed="false">CPU</button>
+      </div>
+      <div id="apps" class="loading">Measuring for one second…</div>
+    </section>
+
+    <section>
+      <h2>Free up space</h2>
+      <p class="sub">Only removes files that have not been touched for a day, so open apps keep working.</p>
+      <div id="space" class="loading">Adding up folder sizes. Large temp folders take a few seconds.</div>
+    </section>
+  </div>
+
+  <section style="margin-bottom:20px">
+    <h2>Apps that start with Windows</h2>
+    <p class="sub">Turning one off stops it opening at sign-in. It stays installed.</p>
+    <div id="startup" class="loading">Reading startup list…</div>
+  </section>
+
+  <section>
+    <h2>Windows tools</h2>
+    <div class="tools">
+      <button data-tool="taskmgr">Task Manager</button>
+      <button data-tool="resmon">Resource Monitor</button>
+      <button data-tool="storage">Storage settings</button>
+      <button data-tool="cleanmgr">Disk Cleanup</button>
+      <button data-tool="apps">Uninstall apps</button>
+      <button data-tool="update">Windows Update</button>
+      <button data-tool="security">Windows Security</button>
+      <button data-tool="devices">Device Manager</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const TOKEN = "__TOKEN__";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const gb = (b) => (b >= 2 ** 30 ? (b / 2 ** 30).toFixed(1) + " GB" : (b / 2 ** 20).toFixed(0) + " MB");
+
+async function api(path, body) {
+  const res = await fetch(path, {
+    method: body ? "POST" : "GET",
+    headers: { "X-Token": TOKEN, "Content-Type": "application/json" },
+    body: body && JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function fail(el, e) { el.className = "error"; el.textContent = "Could not read this: " + e.message; }
+
+/* ---------- Health ---------- */
+let health = null, sortKey = "topMem";
+
+function level(pct, warnAt, badAt) { return pct >= badAt ? "bad" : pct >= warnAt ? "warn" : ""; }
+
+function gauge(name, pct, valText, detail, lvl) {
+  return `<div class="gauge">
+    <div class="top"><span class="name">${esc(name)}</span><span class="val">${esc(valText)}</span></div>
+    <div class="meter ${lvl}" role="meter" aria-label="${esc(name)}" aria-valuenow="${Math.round(pct)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.min(100, pct)}%"></i></div>
+    <div class="detail">${esc(detail)}</div></div>`;
+}
+
+function renderHealth(h) {
+  $("machine").textContent = `${h.machine} · ${h.cpuName} · on for ${h.uptimeH < 48 ? h.uptimeH + " hours" : Math.round(h.uptimeH / 24) + " days"}`;
+
+  const issues = $("issues");
+  issues.className = "";
+  issues.innerHTML = h.issues.length
+    ? h.issues.map((i) => `<div class="issue ${i.level}"><div><p>${esc(i.text)}</p>${i.hint ? `<small>${esc(i.hint)}</small>` : ""}</div></div>`).join("")
+    : `<div class="issue ok"><div><p>Nothing needs fixing right now.</p><small>Memory, drives, disk health and antivirus all look fine.</small></div></div>`;
+
+  const ramUsed = h.ramTotal - h.ramFree, ramPct = (ramUsed / h.ramTotal) * 100;
+  let g = gauge("CPU", h.cpu, Math.round(h.cpu) + "%", "Busy over the last second", level(h.cpu, 70, 90));
+  g += gauge("Memory", ramPct, Math.round(ramPct) + "%", `${gb(ramUsed)} of ${gb(h.ramTotal)} in use`, level(ramPct, 80, 92));
+  for (const d of h.drives) {
+    const p = ((d.size - d.free) / d.size) * 100;
+    g += gauge(`Drive ${d.id}`, p, gb(d.free), `free of ${gb(d.size)}`, level(p, 85, 93));
+  }
+  if (h.battery) g += gauge("Battery", h.battery.pct, h.battery.pct + "%", h.battery.plugged ? "Plugged in" : "On battery", h.battery.pct < 20 ? "bad" : "");
+  $("gauges").innerHTML = g;
+  renderApps();
+}
+
+function renderApps() {
+  if (!health) return;
+  const rows = health[sortKey].map((a) => `<tr>
+      <td>${esc(a.name)} ${a.count > 1 ? `<span class="count">×${a.count}</span>` : ""}</td>
+      <td class="num">${gb(a.mem)}</td><td class="num">${a.cpu.toFixed(1)}%</td></tr>`).join("");
+  $("apps").className = "";
+  $("apps").innerHTML = `<table><thead><tr><th>App</th><th class="num">Memory</th><th class="num">CPU</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+document.querySelectorAll("[data-sort]").forEach((b) => b.addEventListener("click", () => {
+  sortKey = b.dataset.sort;
+  document.querySelectorAll("[data-sort]").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  renderApps();
+}));
+
+async function loadHealth() {
+  try { health = await api("/api/health"); renderHealth(health); }
+  catch (e) { fail($("issues"), e); }
+}
+
+/* ---------- Space ---------- */
+async function loadSpace() {
+  const el = $("space");
+  try {
+    const s = await api("/api/space");
+    el.className = "";
+    el.innerHTML = s.items.map((i) => `<div class="clean-row">
+        <input type="checkbox" id="c-${i.id}" value="${i.id}" ${i.id !== "recycle" && i.size > 0 ? "checked" : ""} ${i.size ? "" : "disabled"}>
+        <label for="c-${i.id}">${esc(i.name)}</label><span class="size">${gb(i.size)}</span>
+        <small>${esc(i.note)}</small></div>`).join("") +
+      `<div class="clean-row"><span></span><span><b>Downloads folder</b></span><span class="size">${gb(s.downloads)}</span>
+        <small>Not cleaned automatically. <a href="#" id="open-dl">Open it</a> and delete what you no longer need.</small></div>
+      <div class="clean-foot"><button class="primary" id="clean">Clean selected</button><span id="clean-result" aria-live="polite"></span></div>`;
+    $("open-dl").addEventListener("click", (e) => { e.preventDefault(); api("/api/launch", { tool: "downloads" }); });
+    $("clean").addEventListener("click", runClean);
+  } catch (e) { fail(el, e); }
+}
+
+async function runClean() {
+  const ids = [...document.querySelectorAll("#space input:checked")].map((c) => c.value);
+  if (!ids.length) return;
+  if (ids.includes("recycle") && !confirm("Emptying the Recycle Bin deletes those files for good. Continue?")) return;
+  const btn = $("clean"), out = $("clean-result");
+  btn.disabled = true; out.className = ""; out.textContent = "Cleaning…";
+  try {
+    const r = await api("/api/clean", { ids });
+    out.className = "result";
+    out.textContent = `Cleaned ${gb(r.freed)}.` + (r.skipped ? ` Skipped ${r.skipped} files that are in use or new.` : "");
+    setTimeout(loadSpace, 2500);
+  } catch (e) { fail(out, e); btn.disabled = false; }
+}
+
+/* ---------- Startup ---------- */
+async function loadStartup() {
+  const el = $("startup");
+  try {
+    const rows = await api("/api/startup");
+    el.className = "";
+    el.innerHTML = rows.map((r, n) => `<div class="startup-row ${r.enabled ? "" : "off"}">
+        <span><span class="nm">${esc(r.name)}</span> <span class="who">${r.scope === "user" ? "you" : "all users"}</span></span>
+        <button class="switch" role="switch" aria-checked="${r.enabled}" data-n="${n}">${r.enabled ? "On" : "Off"}</button>
+        <span class="cmd" title="${esc(r.command)}">${esc(r.command)}</span></div>`).join("");
+    el.querySelectorAll(".switch").forEach((b) => b.addEventListener("click", async () => {
+      const r = rows[b.dataset.n];
+      b.disabled = true;
+      try {
+        await api("/api/startup", { scope: r.scope, name: r.name, enabled: !r.enabled });
+        r.enabled = !r.enabled;
+        b.setAttribute("aria-checked", r.enabled);
+        b.textContent = r.enabled ? "On" : "Off";
+        b.closest(".startup-row").classList.toggle("off", !r.enabled);
+      } catch (e) { alert(e.message); }
+      b.disabled = false;
+    }));
+  } catch (e) { fail(el, e); }
+}
+
+/* ---------- Tools / header ---------- */
+document.querySelectorAll("[data-tool]").forEach((b) =>
+  b.addEventListener("click", () => api("/api/launch", { tool: b.dataset.tool }).catch((e) => alert(e.message))));
+
+$("refresh").addEventListener("click", async () => {
+  const b = $("refresh"); b.disabled = true;
+  await Promise.all([loadHealth(), loadSpace(), loadStartup()]);
+  b.disabled = false;
+});
+
+$("quit").addEventListener("click", async () => {
+  await api("/api/quit", {}).catch(() => {});
+  document.body.innerHTML = '<div class="wrap"><h1>PC Hub</h1><p>Closed. Open PC Hub again from its shortcut.</p></div>';
+});
+
+loadHealth(); loadSpace(); loadStartup();
+</script>
+</body>
+</html>
